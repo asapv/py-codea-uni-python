@@ -31,12 +31,12 @@ col1, col2 = st.columns([1, 1])
 with col1:
     st.subheader("Datos de Entrada")
     with st.form("input_form"):
-        mining_cost = st.number_input("Costo de Minado ($/tonelada):", min_value=0.01, format="%.2f")
-        processing_cost = st.number_input("Costo de Procesamiento ($/tonelada):", min_value=0.01, format="%.2f")
-        mineral_price = st.number_input("Precio del Mineral ($/tonelada):", min_value=0.01, format="%.2f")
-        refining_cost = st.number_input("Costo de Refinación ($/tonelada):", min_value=0.0, max_value=float(mineral_price), format="%.2f")
-        recovery = st.number_input("Recuperación Metalúrgica (%):", min_value=0.1, max_value=100.0, format="%.1f")
-        stock_threshold = st.number_input("Umbral para Stock (0-1):", min_value=0.0, max_value=1.0, format="%.2f")
+        mining_cost = st.number_input("Costo de Minado ($/tonelada):", min_value=0.01, value=20.0, format="%.2f")
+        processing_cost = st.number_input("Costo de Procesamiento ($/tonelada):", min_value=0.01, value=30.0,  format="%.2f")
+        mineral_price = st.number_input("Precio del Mineral ($/tonelada):", min_value=0.01, value=6000.0, format="%.2f")
+        refining_cost = st.number_input("Costo de Refinación ($/tonelada):", min_value=0.0, value=500.0, format="%.2f")
+        recovery = st.number_input("Recuperación Metalúrgica (%):", min_value=0.1, max_value=100.0, value=85.0, format="%.1f")
+        stock_threshold = st.number_input("Umbral para Stock (0-1):", min_value=0.0, max_value=1.0, value=0.7, format="%.2f")
         
         # Campo para agregar bloques
         block_grade_input = st.text_input("Leyes de Bloques (%):", 
