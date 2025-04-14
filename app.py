@@ -2,85 +2,106 @@ import streamlit as st
 import pandas as pd
 
 def calculate_cutoff_grade(mining_cost, processing_cost, mineral_price, refining_cost, metallurgical_recovery):
-    """Calcula la Ley de Corte usando la fórmula de Kenneth Lane."""
+    """Calculate Cut-Off Grade using Kenneth Lane's method."""
     recovery_decimal = metallurgical_recovery / 100
     denominator = (mineral_price - refining_cost) * recovery_decimal
     if denominator <= 0:
-        st.error("El precio del mineral ajustado por refinación y recuperación debe ser mayor que 0.")
+        st.error("Mineral price adjusted by refining and recovery must be greater than 0.")
         return None
     return ((mining_cost + processing_cost) / denominator) * 100
 
 def decide_block_action(block_grade, cutoff_grade, stock_threshold):
-    """Decide si un bloque debe ser procesado, enviado a stock o descartado."""
+    """Decide if a block should be processed, sent to stock, or discarded."""
     stock_limit = cutoff_grade * stock_threshold
     if block_grade >= cutoff_grade:
-        return "Procesar"
+        return "Process"
     elif block_grade >= stock_limit:
-        return "Enviar a stock"
+        return "Send to Stock"
     else:
-        return "Descartar"
+        return "Discard"
 
-# Configuración de la página
-st.set_page_config(page_title="Calculadora de Ley de Corte", layout="wide")
-st.title("Calculadora de Ley de Corte")
+# Initialize session state to store results
+if 'results' not in st.session_state:
+    st.session_state.results = []
 
-# Crear columnas para organizar la interfaz
+# Page configuration
+st.set_page_config(page_title="Cut-Off Grade Calculator", layout="wide")
+st.title("Cut-Off Grade Calculator")
+
+# Create columns for layout
 col1, col2 = st.columns([1, 1])
 
-# Parámetros en la primera columna
+# Input parameters in the first column
 with col1:
-    st.subheader("Datos de Entrada")
+    st.subheader("Input Data")
     with st.form("input_form"):
-        mining_cost = st.number_input("Costo de Minado ($/tonelada):", min_value=0.01, value=20.0, format="%.2f")
-        processing_cost = st.number_input("Costo de Procesamiento ($/tonelada):", min_value=0.01, value=30.0,  format="%.2f")
-        mineral_price = st.number_input("Precio del Mineral ($/tonelada):", min_value=0.01, value=6000.0, format="%.2f")
-        refining_cost = st.number_input("Costo de Refinación ($/tonelada):", min_value=0.0, value=500.0, format="%.2f")
-        recovery = st.number_input("Recuperación Metalúrgica (%):", min_value=0.1, max_value=100.0, value=85.0, format="%.1f")
-        stock_threshold = st.number_input("Umbral para Stock (0-1):", min_value=0.0, max_value=1.0, value=0.7, format="%.2f")
+        mining_cost = st.number_input("Mining Cost ($/ton):", min_value=0.01, value=20.0, format="%.2f", key="mining_cost")
+        processing_cost = st.number_input("Processing Cost ($/ton):", min_value=0.01, value=30.0, format="%.2f", key="processing_cost")
+        mineral_price = st.number_input("Mineral Price ($/ton):", min_value=0.01, value=6000.0, format="%.2f", key="mineral_price")
+        refining_cost = st.number_input("Refining Cost ($/ton):", min_value=0.0, value=500.0, format="%.2f", key="refining_cost")
+        recovery = st.number_input("Metallurgical Recovery (%):", min_value=0.1, max_value=100.0, value=85.0, format="%.1f", key="recovery")
+        stock_threshold = st.number_input("Stock Threshold (0-1):", min_value=0.0, max_value=1.0, value=0.7, format="%.2f", key="stock_threshold")
         
-        # Campo para agregar bloques
-        block_grade_input = st.text_input("Leyes de Bloques (%):", 
-                                         help="Ingresa las leyes separadas por comas (e.j. '1.2, 3.4, 5.6')")
+        # Block grades input
+        block_grade_input = st.text_input("Block Grades (%):", 
+                                         help="Enter grades separated by commas (e.g., '1.2, 3.4, 5.6')", key="block_grade_input")
         
-        submitted = st.form_submit_button("Calcular")
+        # Buttons
+        col_submit, col_clear = st.columns(2)
+        with col_submit:
+            submitted = st.form_submit_button("Calculate")
+        with col_clear:
+            cleared = st.form_submit_button("Clear")
 
-# Segunda columna para resultados
+# Results in the second column
 with col2:
-    st.subheader("Resultados")
+    st.subheader("Results")
+    
+    if cleared:
+        # Reset all inputs and results
+        st.session_state.results = []
+        for key in ["mining_cost", "processing_cost", "mineral_price", "refining_cost", "recovery", "stock_threshold", "block_grade_input"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.experimental_rerun()
     
     if submitted:
-        # Calcular la ley de corte
+        # Calculate cut-off grade
         cutoff_grade = calculate_cutoff_grade(mining_cost, processing_cost, mineral_price, refining_cost, recovery)
         
         if cutoff_grade is not None:
-            st.success(f"**Ley de Corte: {cutoff_grade:.2f}%**")
+            st.success(f"**Cut-Off Grade: {cutoff_grade:.2f}%**")
             
-            # Procesar los bloques
+            # Process block grades
             try:
                 if block_grade_input:
                     block_grades = [float(grade.strip()) for grade in block_grade_input.split(',')]
                     
-                    # Crear dataframe para resultados
-                    results = []
+                    # Append new results
                     for grade in block_grades:
                         action = decide_block_action(grade, cutoff_grade, stock_threshold)
-                        results.append({"Ley del Bloque (%)": f"{grade:.2f}", "Acción": action})
+                        st.session_state.results.append({"Block Grade (%)": f"{grade:.2f}", "Action": action})
                     
-                    # Mostrar tabla de resultados
-                    st.subheader("Análisis de Bloques")
-                    df = pd.DataFrame(results)
-                    st.dataframe(df, use_container_width=True)
-                    
-                    # Mostrar resumen
-                    processed = sum(1 for r in results if r["Acción"] == "Procesar")
-                    stocked = sum(1 for r in results if r["Acción"] == "Enviar a stock")
-                    discarded = sum(1 for r in results if r["Acción"] == "Descartar")
-                    
-                    st.subheader("Resumen")
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Procesados", processed)
-                    col2.metric("Enviados a Stock", stocked)
-                    col3.metric("Descartados", discarded)
-                    
+                    # Clear block grade input for new entries
+                    st.session_state.block_grade_input = ""
+            
             except ValueError:
-                st.error("Formato de leyes incorrecto. Usa números separados por comas.")
+                st.error("Invalid grade format. Use numbers separated by commas.")
+    
+    # Display results if available
+    if st.session_state.results:
+        # Show block analysis table
+        st.subheader("Block Analysis")
+        df = pd.DataFrame(st.session_state.results)
+        st.dataframe(df, use_container_width=True)
+        
+        # Show summary
+        processed = sum(1 for r in st.session_state.results if r["Action"] == "Process")
+        stocked = sum(1 for r in st.session_state.results if r["Action"] == "Send to Stock")
+        discarded = sum(1 for r in st.session_state.results if r["Action"] == "Discard")
+        
+        st.subheader("Summary")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Processed", processed)
+        col2.metric("Sent to Stock", stocked)
+        col3.metric("Discarded", discarded)
