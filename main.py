@@ -47,6 +47,8 @@ if 'block_grades' not in st.session_state:
     st.session_state.block_grades = []
 if 'results' not in st.session_state:
     st.session_state.results = []
+if 'block_grade_key' not in st.session_state:
+    st.session_state.block_grade_key = 0
 
 # Page configuration
 st.set_page_config(page_title="Cut-Off Grade Calculator", layout="wide")
@@ -66,7 +68,7 @@ with col1:
         recovery = st.number_input("Metallurgical Recovery (%):", min_value=0.1, max_value=100.0, value=85.0, format="%.1f", key="recovery")
         stock_threshold = st.number_input("Stock Threshold (0-1):", min_value=0.0, max_value=1.0, value=0.7, format="%.2f", key="stock_threshold")
         
-        block_grade = st.text_input("Block Grade (%):", help="Enter a single block grade (e.g., 1.2)", key="block_grade")
+        block_grade = st.text_input("Block Grade (%):", help="Enter a single block grade (e.g., 1.2)", key=f"block_grade_{st.session_state.block_grade_key}")
         
         col_add, col_calc, col_clear = st.columns(3)
         with col_add:
@@ -84,7 +86,8 @@ with col2:
         # Reset all inputs and results
         st.session_state.block_grades = []
         st.session_state.results = []
-        for key in ["mining_cost", "processing_cost", "mineral_price", "refining_cost", "recovery", "stock_threshold", "block_grade"]:
+        st.session_state.block_grade_key += 1  # Change key to reset input
+        for key in ["mining_cost", "processing_cost", "mineral_price", "refining_cost", "recovery", "stock_threshold"]:
             if key in st.session_state:
                 del st.session_state[key]
         st.experimental_rerun()
@@ -94,7 +97,7 @@ with col2:
         grade = validate_input(block_grade, "Block Grade")
         if grade is not None:
             st.session_state.block_grades.append(grade)
-            st.session_state.block_grade = ""  # Clear input
+            st.session_state.block_grade_key += 1  # Change key to clear input
             st.success(f"Block with grade {grade:.2f}% added.")
     
     if calculate:
