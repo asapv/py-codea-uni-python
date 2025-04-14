@@ -7,8 +7,6 @@ Esta aplicación web permite calcular la Ley de Corte utilizando el método de K
 - Cálculo de Ley de Corte basado en parámetros económicos y metalúrgicos
 - Evaluación de bloques mineros individuales
 - Clasificación de bloques en categorías: Procesar, Enviar a stock, o Descartar
-- Visualización de resultados en tablas y resúmenes estadísticos
-- Interfaz intuitiva y fácil de usar
   
 ## Cómo usar la aplicación
 
